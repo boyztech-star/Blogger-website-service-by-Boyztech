@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoyzTech — Blogger Website Setup, Fully Wired</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --navy:#14213D;
+    --navy-deep:#0F1A2E;
+    --line:#2A3A63;
+    --line-soft:#22315a;
+    --cyan:#5EEAD4;
+    --amber:#FFB020;
+    --ink:#F4F6F8;
+    --muted:#A9B2C3;
+    --muted-2:#6E7890;
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+
+  body{
+    background:var(--navy);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+  }
+
+  a { color:inherit; text-decoration:none; }
+
+  /* ===== background grid, shared texture ===== */
+  .bg-grid{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size:32px 32px;
+    opacity:0.28;
+  }
+  .bg-grid::after{
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 50% 0%, rgba(20,33,61,0) 0%, var(--navy) 70%);
+  }
+
+  .crosshair{ position:absolute; width:20px; height:20px; opacity:0.7; }
+  .crosshair::before,.crosshair::after{ content:''; position:absolute; background:var(--cyan); }
+  .crosshair::before{ width:20px; height:1.5px; top:9px; left:0; }
+  .crosshair::after{ width:1.5px; height:20px; left:9px; top:0; }
+
+  section{ position:relative; z-index:1; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    letter-spacing:0.18em;
+    color:var(--cyan);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 10px var(--cyan); }
+
+  h1,h2,h3{ font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:-0.01em; }
+  .accent{ color:var(--amber); }
+  .accent-c{ color:var(--cyan); }
+
+  .reveal{ opacity:0; transform:translateY(28px); transition:opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible{ opacity:1; transform:translateY(0); }
+
+  /* ===== NAV ===== */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    background:rgba(15,26,46,0.75);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto; padding:16px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo{ display:flex; align-items:center; gap:10px; }
+  .logo-mark{
+    width:32px; height:32px; background:var(--amber); border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--navy);
+  }
+  .logo-text{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--muted); }
+  .logo-text b{ color:var(--ink); font-size:14px; }
+
+  .nav-links{ display:flex; align-items:center; gap:32px; }
+  .nav-links a{ font-size:14px; color:var(--muted); transition:color 0.2s; }
+  .nav-links a:hover{ color:var(--cyan); }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px;
+    padding:11px 22px; border-radius:6px; cursor:pointer; border:none;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary{ background:var(--amber); color:var(--navy); box-shadow:0 4px 14px rgba(255,176,32,0.25); }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,176,32,0.35); }
+  .btn-ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  /* ===== HERO ===== */
+  .hero{ padding:180px 0 100px; }
+  .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:50px; align-items:center; }
+  .hero h1{ font-size:56px; line-height:1.08; margin:20px 0 22px; }
+  .hero p.sub{ font-size:18px; color:var(--muted); line-height:1.6; max-width:480px; margin-bottom:34px; }
+  .hero-cta{ display:flex; gap:14px; margin-bottom:36px; }
+
+  .trust-row{ display:flex; gap:26px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted-2); }
+  .trust-row span{ display:flex; align-items:center; gap:7px; }
+  .trust-row .sq{ width:6px; height:6px; background:var(--cyan); border-radius:1px; }
+
+  /* schematic browser mockup */
+  .schematic{ position:relative; }
+  .browser-window{
+    background:var(--navy-deep); border:1.5px solid var(--line); border-radius:10px;
+    box-shadow:0 30px 70px rgba(0,0,0,0.45);
+  }
+  .browser-topbar{ display:flex; align-items:center; gap:6px; padding:12px 14px; border-bottom:1.5px solid var(--line); }
+  .b-dot{ width:9px; height:9px; border-radius:50%; background:var(--line); }
+  .browser-url{
+    flex:1; margin-left:8px; background:var(--navy); border:1px solid var(--line-soft); border-radius:5px;
+    padding:5px 10px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan);
+  }
+  .browser-body{ padding:22px; }
+  .skel-logo{ width:90px; height:20px; background:var(--amber); border-radius:4px; margin-bottom:18px; opacity:0.9; }
+  .skel-line{ height:10px; border-radius:3px; background:var(--line-soft); margin-bottom:10px; }
+  .skel-hero{ height:100px; border-radius:6px; background:linear-gradient(135deg,#1B2A4C,#223761); border:1px dashed var(--line); margin-bottom:16px; }
+  .skel-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .skel-card{ height:54px; border-radius:5px; background:#1B2A4C; border:1px solid var(--line-soft); }
+
+  .node{ position:absolute; font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .node-badge{
+    background:#1B2A4C; border:1px solid var(--cyan); border-radius:20px; padding:6px 12px;
+    display:flex; align-items:center; gap:7px; box-shadow:0 0 16px rgba(94,234,212,0.15); white-space:nowrap;
+  }
+  .node-badge .sq{ width:6px; height:6px; background:var(--cyan); border-radius:1px; }
+  .n1{ top:-16px; right:200px; }
+  .n2{ top:36px; right:-40px; }
+  .n3{ top:220px; right:-56px; }
+  .n4{ top:296px; right:190px; }
+
+  /* section header pattern */
+  .sec-header{ text-align:center; max-width:600px; margin:0 auto 56px; }
+  .sec-header h2{ font-size:38px; margin-top:16px; }
+  .sec-header p{ color:var(--muted); font-size:16px; margin-top:14px; line-height:1.6; }
+
+  .divider{
+    display:flex; align-items:center; gap:16px; margin:0 auto; max-width:1180px; padding:0 32px;
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted-2); letter-spacing:0.1em;
+  }
+  .divider .line{ flex:1; height:1px; background:var(--line); background-image:linear-gradient(90deg,var(--line) 60%, transparent 0); background-size:8px 1px; }
+
+  /* ===== FEATURES ===== */
+  .features{ padding:110px 0; }
+  .module-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .module{
+    background:var(--navy-deep); border:1.5px solid var(--line); border-radius:10px; padding:22px 20px;
+    position:relative; transition:border-color 0.25s ease, transform 0.25s ease;
+  }
+  .module:hover{ border-color:var(--cyan); transform:translateY(-4px); }
+  .module::before{ content:''; position:absolute; top:-1.5px; left:18px; width:26px; height:3px; background:var(--cyan); border-radius:0 0 3px 3px; }
+  .mod-id{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--cyan); letter-spacing:0.08em; margin-bottom:14px; display:block; }
+  .mod-icon{ width:38px; height:38px; border:1.5px solid var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:14px; background:var(--navy); }
+  .mod-title{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:16px; margin-bottom:8px; }
+  .mod-desc{ font-size:12.5px; color:var(--muted-2); line-height:1.5; }
+
+  /* ===== PROCESS ===== */
+  .process{ padding:110px 0; }
+  .steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative; }
+  .steps::before{
+    content:''; position:absolute; top:24px; left:12.5%; right:12.5%; height:1px;
+    background:repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+  }
+  .step{ text-align:center; padding:0 16px; position:relative; }
+  .step-num{
+    width:48px; height:48px; border-radius:50%; background:var(--navy-deep); border:1.5px solid var(--cyan);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 20px;
+    font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--cyan); position:relative; z-index:2;
+  }
+  .step h3{ font-size:17px; margin-bottom:10px; }
+  .step p{ font-size:13px; color:var(--muted-2); line-height:1.55; }
+
+  /* ===== PRICING ===== */
+  .pricing{ padding:110px 0; }
+  .package-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; }
+  .package{
+    background:var(--navy-deep); border:1.5px solid var(--line); border-radius:12px; padding:30px 26px;
+    display:flex; flex-direction:column; position:relative; transition:transform 0.25s ease;
+  }
+  .package.featured{ border:1.5px solid var(--amber); transform:translateY(-14px); box-shadow:0 20px 50px rgba(255,176,32,0.12); }
+  .package-tag{
+    position:absolute; top:-13px; left:50%; transform:translateX(-50%); background:var(--amber); color:var(--navy);
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:600; letter-spacing:0.08em; padding:5px 14px; border-radius:20px;
+  }
+  .pkg-id{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--cyan); letter-spacing:0.1em; margin-bottom:10px; }
+  .package.featured .pkg-id{ color:var(--amber); }
+  .pkg-name{ font-size:22px; margin-bottom:14px; }
+  .pkg-price{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:38px; margin-bottom:4px; }
+  .pkg-price span{ font-size:15px; color:var(--muted-2); font-weight:500; }
+  .pkg-delivery{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted-2); margin-bottom:18px; }
+  .pkg-divider{ height:1px; background:var(--line); margin-bottom:18px; }
+  .pkg-features{ display:flex; flex-direction:column; gap:10px; flex:1; margin-bottom:22px; }
+  .pkg-feature{ display:flex; align-items:flex-start; gap:9px; font-size:13px; color:var(--muted); line-height:1.4; }
+  .pkg-feature .tick{ width:15px; height:15px; border:1.5px solid var(--cyan); border-radius:3px; display:flex; align-items:center; justify-content:center; color:var(--cyan); font-size:9px; flex-shrink:0; margin-top:1px; }
+  .package.featured .pkg-feature .tick{ border-color:var(--amber); color:var(--amber); }
+  .package .btn{ width:100%; justify-content:center; }
+
+  /* ===== FAQ ===== */
+  .faq{ padding:110px 0; }
+  .faq-list{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  .faq-item{ background:var(--navy-deep); border:1.5px solid var(--line); border-radius:10px; overflow:hidden; }
+  .faq-q{ padding:20px 24px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; }
+  .faq-q .plus{ color:var(--cyan); font-size:18px; transition:transform 0.25s ease; flex-shrink:0; margin-left:16px; }
+  .faq-item.open .plus{ transform:rotate(45deg); }
+  .faq-a{ max-height:0; overflow:hidden; transition:max-height 0.3s ease; }
+  .faq-a p{ padding:0 24px 20px; font-size:13.5px; color:var(--muted); line-height:1.6; }
+
+  /* ===== CTA FOOTER ===== */
+  .cta-footer{ padding:120px 0 60px; text-align:center; }
+  .cta-box{
+    max-width:720px; margin:0 auto; padding:56px 40px; background:var(--navy-deep);
+    border:1.5px solid var(--line); border-radius:16px; position:relative;
+  }
+  .cta-box h2{ font-size:34px; margin:16px 0 14px; }
+  .cta-box p{ color:var(--muted); font-size:15.5px; margin-bottom:30px; }
+
+  footer{ padding:40px 0 50px; }
+  .footer-inner{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; border-top:1px solid var(--line); padding-top:28px; }
+  .brand-tag{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{ width:32px; height:32px; background:var(--amber); border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--navy); }
+  .brand-text{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted-2); line-height:1.3; }
+  .brand-text b{ color:var(--muted); display:block; font-size:12.5px; }
+  .footer-note{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted-2); }
+
+  @media (max-width:900px){
+    .nav-links{ display:none; }
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero{ padding:150px 0 70px; }
+    .hero h1{ font-size:38px; }
+    .schematic{ max-width:440px; margin:0 auto; }
+    .module-grid{ grid-template-columns:1fr 1fr; }
+    .steps{ grid-template-columns:1fr 1fr; row-gap:36px; }
+    .steps::before{ display:none; }
+    .package-row{ grid-template-columns:1fr; }
+    .package.featured{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">
+      <div class="logo-mark">BT</div>
+      <div class="logo-text"><b>BoyzTech</b></div>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#process">Process</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="#pricing" class="btn btn-primary">Order Now →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="reveal">
+        <div class="eyebrow"><span class="dot"></span>TECHNICAL BUILD SERVICE</div>
+        <h1>Blogger Website,<br>Fully <span class="accent">Wired</span></h1>
+        <p class="sub">Complete Blogspot setup — connected to Analytics, Search Console and AdSense, so it's ready to rank and earn from day one.</p>
+        <div class="hero-cta">
+          <a href="#pricing" class="btn btn-primary">View Packages →</a>
+          <a href="#features" class="btn btn-ghost">See What's Included</a>
+        </div>
+        <div class="trust-row">
+          <span><span class="sq"></span>Google-connected setup</span>
+          <span><span class="sq"></span>SEO-ready on delivery</span>
+          <span><span class="sq"></span>Fast turnaround</span>
+        </div>
+      </div>
+
+      <div class="schematic reveal">
+        <div class="node n1"><div class="node-badge"><span class="sq"></span>Search Console</div></div>
+        <div class="node n2"><div class="node-badge"><span class="sq"></span>AdSense</div></div>
+        <div class="node n3"><div class="node-badge"><span class="sq"></span>Analytics</div></div>
+        <div class="node n4"><div class="node-badge"><span class="sq"></span>Custom Domain</div></div>
+
+        <div class="browser-window">
+          <div class="browser-topbar">
+            <div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div>
+            <div class="browser-url">https://yoursite.com</div>
+          </div>
+          <div class="browser-body">
+            <div class="skel-logo"></div>
+            <div class="skel-hero"></div>
+            <div class="skel-line" style="width:70%"></div>
+            <div class="skel-line" style="width:45%"></div>
+            <div class="skel-grid">
+              <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span>SECTION 01 / 04</span><div class="line"></div></div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="dot"></span>FULL SCOPE OF WORK</div>
+      <h2>Everything <span class="accent">Included</span></h2>
+      <p>Eight modules, one delivery — your site leaves fully wired and ready to launch.</p>
+    </div>
+
+    <div class="module-grid">
+      <div class="module reveal"><span class="mod-id">MOD.01</span><div class="mod-icon">🌐</div><div class="mod-title">Custom Domain</div><div class="mod-desc">Connect your own domain or set up a free subdomain.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.02</span><div class="mod-icon">🎨</div><div class="mod-title">Logo &amp; Favicon</div><div class="mod-desc">Clean branding assets sized and installed correctly.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.03</span><div class="mod-icon">📄</div><div class="mod-title">Essential Pages</div><div class="mod-desc">About, Contact, Privacy Policy, Disclaimer, Terms.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.04</span><div class="mod-icon">📱</div><div class="mod-title">Responsive Theme</div><div class="mod-desc">Fast-loading layout that works on every screen.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.05</span><div class="mod-icon">🔍</div><div class="mod-title">Search Console</div><div class="mod-desc">Verified and submitted so Google can index you.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.06</span><div class="mod-icon">📊</div><div class="mod-title">Analytics (GA4)</div><div class="mod-desc">Full traffic tracking wired in from day one.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.07</span><div class="mod-icon">💰</div><div class="mod-title">AdSense Setup</div><div class="mod-desc">Application connected and configured correctly.</div></div>
+      <div class="module reveal"><span class="mod-id">MOD.08</span><div class="mod-icon">⚙️</div><div class="mod-title">SEO Structure</div><div class="mod-desc">Meta tags, sitemap and robots.txt configured.</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span>SECTION 02 / 04</span><div class="line"></div></div>
+
+<!-- PROCESS -->
+<section class="process" id="process">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="dot"></span>HOW IT WORKS</div>
+      <h2>Four Steps to <span class="accent-c">Launch</span></h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="step-num">01</div><h3>Place Order</h3><p>Choose your package and share your site details and Google account access.</p></div>
+      <div class="step reveal"><div class="step-num">02</div><h3>I Build</h3><p>Domain, theme, logo and pages get set up and structured for SEO.</p></div>
+      <div class="step reveal"><div class="step-num">03</div><h3>Get Wired</h3><p>Analytics, Search Console and AdSense are connected and verified.</p></div>
+      <div class="step reveal"><div class="step-num">04</div><h3>You Launch</h3><p>Final walkthrough delivered — your site is live and ready to grow.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span>SECTION 03 / 04</span><div class="line"></div></div>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="dot"></span>CHOOSE YOUR BUILD</div>
+      <h2>Three Ways to <span class="accent">Launch</span></h2>
+    </div>
+
+    <div class="package-row">
+      <div class="package reveal">
+        <div class="pkg-id">TIER.01</div>
+        <div class="pkg-name">Basic</div>
+        <div class="pkg-price">$15<span> starting</span></div>
+        <div class="pkg-delivery">⏱ 2 day delivery</div>
+        <div class="pkg-divider"></div>
+        <div class="pkg-features">
+          <div class="pkg-feature"><span class="tick">✓</span>Blogspot website setup</div>
+          <div class="pkg-feature"><span class="tick">✓</span>Logo &amp; favicon setup</div>
+          <div class="pkg-feature"><span class="tick">✓</span>3 essential pages</div>
+          <div class="pkg-feature"><span class="tick">✓</span>Basic SEO settings</div>
+        </div>
+        <a href="#" class="btn btn-ghost">Select Basic</a>
+      </div>
+
+      <div class="package featured reveal">
+        <div class="package-tag">MOST POPULAR</div>
+        <div class="pkg-id">TIER.02</div>
+        <div class="pkg-name">Standard</div>
+        <div class="pkg-price">$35<span> starting</span></div>
+        <div class="pkg-delivery">⏱ 3 day delivery</div>
+        <div class="pkg-divider"></div>
+        <div class="pkg-features">
+          <div class="pkg-feature"><span class="tick">✓</span>Everything in Basic</div>
+          <div class="pkg-feature"><span class="tick">✓</span>Custom domain connection</div>
+          <div class="pkg-feature"><span class="tick">✓</span>Search Console + Analytics</div>
+          <div class="pkg-feature"><span class="tick">✓</span>5 pages, sitemap &amp; robots.txt</div>
+        </div>
+        <a href="#" class="btn btn-primary">Select Standard</a>
+      </div>
+
+      <div class="package reveal">
+        <div class="pkg-id">TIER.03</div>
+        <div class="pkg-name">Premium</div>
+        <div class="pkg-price">$65<span> starting</span></div>
+        <div class="pkg-delivery">⏱ 4 day delivery</div>
+        <div class="pkg-divider"></div>
+        <div class="pkg-features">
+          <div class="pkg-feature"><span class="tick">✓</span>Everything in Standard</div>
+          <div class="pkg-feature"><span class="tick">✓</span>AdSense application setup</div>
+          <div class="pkg-feature"><span class="tick">✓</span>Custom logo design</div>
+          <div class="pkg-feature"><span class="tick">✓</span>1 month post-setup support</div>
+        </div>
+        <a href="#" class="btn btn-ghost">Select Premium</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><span>SECTION 04 / 04</span><div class="line"></div></div>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="sec-header reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="dot"></span>QUESTIONS</div>
+      <h2>Before You <span class="accent-c">Order</span></h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item reveal">
+        <div class="faq-q">Do you guarantee AdSense approval? <span class="plus">+</span></div>
+        <div class="faq-a"><p>I connect and set up your AdSense application correctly, but final approval depends entirely on Google's review process — this isn't guaranteed by me or Fiverr's Terms of Service.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">Do I need to provide a domain? <span class="plus">+</span></div>
+        <div class="faq-a"><p>A custom domain is optional. I can set up your site on a free Blogspot subdomain, or connect a domain you've already purchased.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">Will you write content for my site? <span class="plus">+</span></div>
+        <div class="faq-a"><p>This service covers technical setup only — design, structure, pages and connections. Content writing can be discussed as a separate add-on.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">What do you need from me to start? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Your site niche, logo or branding preferences, and access to the Google account you'll use for Blogger, Search Console, Analytics and AdSense.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FOOTER -->
+<section class="cta-footer">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <div class="eyebrow" style="justify-content:center"><span class="dot"></span>READY WHEN YOU ARE</div>
+      <h2>Let's Get Your Site <span class="accent">Wired In</span></h2>
+      <p>Message me with your niche and I'll recommend the right package for your budget.</p>
+      <a href="#pricing" class="btn btn-primary">Order Now →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <div class="brand-tag">
+        <div class="brand-mark">BT</div>
+        <div class="brand-text"><b>BoyzTech</b>svc/blogger-setup</div>
+      </div>
+      <div class="footer-note">© 2026 BoyzTech — Blogger Website Setup Service</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // faq accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const answer = item.querySelector('.faq-a');
+      const isOpen = item.classList.contains('open');
+
+      document.querySelectorAll('.faq-item.open').forEach(open => {
+        open.classList.remove('open');
+        open.querySelector('.faq-a').style.maxHeight = null;
+      });
+
+      if (!isOpen) {
+        item.classList.add('open');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
